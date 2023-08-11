@@ -17,17 +17,26 @@ import kotlinx.coroutines.launch
 
 const val MSG_START = 0
 const val MSG_COUNTER = 1
+const val MSG_STATE = 2
 
 class MyService : Service() {
 
     private var counter = 0
-    private val hash = this.hashCode().toString()
     private val job = Job()
 
     private val incomingHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
                 MSG_START -> createCounter(msg.replyTo)
+                MSG_STATE -> {
+                    msg.replyTo.send(
+                        Message().apply {
+                            what = MSG_STATE
+                            data = Bundle().apply {
+                                putString("log", "received ${msg.data.getString("data")}")
+                            }
+                        })
+                }
                 else -> super.handleMessage(msg)
             }
         }
