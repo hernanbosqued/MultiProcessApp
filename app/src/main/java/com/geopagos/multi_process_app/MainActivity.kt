@@ -30,14 +30,12 @@ import com.geopagos.multi_process_app.ui.theme.MultiProcessAppTheme
 class MainActivity : ComponentActivity() {
 
     private val viewModel: MyViewModel by viewModels()
-    private val incomingHandler = HandlerImpl(viewModel)
-    private val connection = ServiceConnectionImpl(viewModel)
+    private val incomingHandler by lazy { HandlerImpl(viewModel) }
+    private val connection by lazy { ServiceConnectionImpl(viewModel) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         ProcessLifecycleOwner.get().lifecycle.addObserver(DefaultLifecycleObserverImpl(viewModel::sendState))
-
         viewModel.messages().observeForever {
             sendMessage(it.first, it.second)
         }
