@@ -23,6 +23,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.geopagos.multi_process_app.ui.theme.MultiProcessAppTheme
@@ -35,21 +37,26 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        ProcessLifecycleOwner.get().lifecycle.addObserver(DefaultLifecycleObserverImpl(viewModel::sendState))
+
+        //Process lifecycle
+        ProcessLifecycleOwner.get().lifecycle.addObserver(DefaultLifecycleObserverImpl("PROCESS", Color.Blue, viewModel::sendState))
+        //Activity lifecycle
+        lifecycle.addObserver(DefaultLifecycleObserverImpl("ACTIVITY", Color.Red, viewModel::sendState))
+
         viewModel.messages().observeForever {
-            sendMessage(it.first, it.second)
+            sendMessageToService(it.first, it.second)
         }
 
         setContent {
             MultiProcessAppTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Log(Modifier, viewModel)
+                    Log(Modifier, viewModel.log().observeAsState().value)
                 }
             }
         }
     }
 
-    private fun sendMessage(what: Int, data: Bundle = Bundle()) {
+    private fun sendMessageToService(what: Int, data: Bundle = Bundle()) {
         connection.service?.let { service ->
             Messenger(service).send(
                 Message().apply {
@@ -61,9 +68,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun Log(modifier: Modifier, viewModel: MyViewModel) {
-        val log = viewModel.log().observeAsState()
-
+    fun Log(modifier: Modifier, log: List<Pair<Color, String>>?) {
         Column {
             Row(
                 modifier = modifier.fillMaxWidth()
@@ -73,8 +78,7 @@ class MainActivity : ComponentActivity() {
                         .weight(1f)
                         .padding(5.dp),
                     title = "Start"
-                )
-                {
+                ) {
                     Intent(this@MainActivity, MyService::class.java).also { intent ->
                         bindService(intent, connection, Context.BIND_AUTO_CREATE)
                     }
@@ -85,24 +89,49 @@ class MainActivity : ComponentActivity() {
                         .weight(1f)
                         .padding(5.dp),
                     title = "Stop"
-                )
-                {
+                ) {
                     this@MainActivity.unbindService(connection)
                 }
 
+                SimpleButton(
+                    modifier = modifier
+                        .weight(2f)
+                        .padding(5.dp),
+                    title = "Launch activity"
+                ) {
+                    Intent(this@MainActivity, OtherActivity::class.java).also { intent ->
+                        startActivity(intent)
+                    }
+                }
             }
 
             LazyColumn(
                 modifier = modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(16.dp)
             ) {
-                items(log.value ?: listOf("Empty")) {
+                items(log ?: listOf(Color.Black to "Empty")) {
                     Text(
-                        text = it,
+                        color = it.first,
+                        text = it.second,
                         modifier = modifier.fillMaxSize()
                     )
                 }
             }
+        }
+    }
+
+    @Preview(showBackground = true)
+    @Composable
+    fun LogPreview() {
+        val log = listOf(
+            Color.Black to "Atlanta",
+            Color.Gray to "Atlanta",
+            Color.Blue to "Atlanta",
+            Color.Red to "Atlanta",
+        )
+
+        MultiProcessAppTheme {
+            Log(Modifier, log)
         }
     }
 

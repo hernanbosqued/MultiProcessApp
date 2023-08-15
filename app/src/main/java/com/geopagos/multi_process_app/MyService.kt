@@ -8,12 +8,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.Message
 import android.os.Messenger
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 
 const val MSG_START = 0
 const val MSG_COUNTER = 1
@@ -21,19 +16,20 @@ const val MSG_STATE = 2
 
 class MyService : Service() {
 
-    private var counter = 0
+//    private var counter = 0
     private val job = Job()
 
     private val incomingHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
-                MSG_START -> createCounter(msg.replyTo)
+                //MSG_START -> createCounter(msg.replyTo)
                 MSG_STATE -> {
                     msg.replyTo.send(
                         Message().apply {
                             what = MSG_STATE
                             data = Bundle().apply {
-                                putString("log", "received ${msg.data.getString("data")}")
+                                putInt("color", msg.data.getInt("color"))
+                                putString("log", "${msg.data.getString("owner")}->${msg.data.getString("data")}")
                             }
                         })
                 }
@@ -42,22 +38,22 @@ class MyService : Service() {
         }
     }
 
-    private fun createCounter(messenger: Messenger) {
-        CoroutineScope(Dispatchers.IO + job).launch {
-            while (this.isActive) {
-                messenger.send(
-                    Message().apply {
-                        what = MSG_COUNTER
-                        data = Bundle().apply {
-                            putString("log", (counter++).toString())
-                            putString("pid", android.os.Process.myPid().toString())
-                        }
-                    })
-
-                delay(1000)
-            }
-        }
-    }
+//    private fun createCounter(messenger: Messenger) {
+//        CoroutineScope(Dispatchers.IO + job).launch {
+//            while (this.isActive) {
+//                messenger.send(
+//                    Message().apply {
+//                        what = MSG_COUNTER
+//                        data = Bundle().apply {
+//                            putString("log", (counter++).toString())
+//                            putString("pid", android.os.Process.myPid().toString())
+//                        }
+//                    })
+//
+//                delay(1000)
+//            }
+//        }
+//    }
 
     override fun onBind(intent: Intent): IBinder? {
         return Messenger(incomingHandler).binder
