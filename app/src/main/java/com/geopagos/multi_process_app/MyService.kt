@@ -8,52 +8,46 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.Message
 import android.os.Messenger
-import kotlinx.coroutines.Job
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 
 const val MSG_START = 0
-const val MSG_COUNTER = 1
+const val MSG_LOG = 1
 const val MSG_STATE = 2
+const val MSG_STOP = 3
 
 class MyService : Service() {
-
-//    private var counter = 0
-    private val job = Job()
 
     private val incomingHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
-                //MSG_START -> createCounter(msg.replyTo)
-                MSG_STATE -> {
-                    msg.replyTo.send(
-                        Message().apply {
-                            what = MSG_STATE
-                            data = Bundle().apply {
-                                putInt("color", msg.data.getInt("color"))
-                                putString("log", "${msg.data.getString("owner")}->${msg.data.getString("data")}")
-                            }
-                        })
+                MSG_START -> sendLog(msg.replyTo, Color.Black.toArgb(), android.os.Process.myPid().toString(), "Connected")
+                MSG_STATE -> sendLog(
+                    msg.replyTo, msg.data.getInt("color"),
+                    android.os.Process.myPid().toString() + "->" + msg.data.getString("owner").orEmpty(),
+                    msg.data.getString("data").orEmpty()
+                )
+
+                MSG_STOP -> {
+                    sendLog(msg.replyTo, Color.Black.toArgb(), android.os.Process.myPid().toString(), "Disconnected")
+                    android.os.Process.killProcess(android.os.Process.myPid())
                 }
+
                 else -> super.handleMessage(msg)
             }
         }
     }
 
-//    private fun createCounter(messenger: Messenger) {
-//        CoroutineScope(Dispatchers.IO + job).launch {
-//            while (this.isActive) {
-//                messenger.send(
-//                    Message().apply {
-//                        what = MSG_COUNTER
-//                        data = Bundle().apply {
-//                            putString("log", (counter++).toString())
-//                            putString("pid", android.os.Process.myPid().toString())
-//                        }
-//                    })
-//
-//                delay(1000)
-//            }
-//        }
-//    }
+    private fun sendLog(messenger: Messenger, color: Int, tag: String, message: String) {
+        messenger.send(
+            Message().apply {
+                what = MSG_LOG
+                data = Bundle().apply {
+                    putInt("color", color)
+                    putString("log", "$tag->$message")
+                }
+            })
+    }
 
     override fun onBind(intent: Intent): IBinder? {
         return Messenger(incomingHandler).binder
@@ -63,9 +57,4 @@ class MyService : Service() {
 //        super.onCreate()
 //        //android.os.Debug.waitForDebugger()
 //    }
-
-    override fun onDestroy() {
-        job.cancel()
-        super.onDestroy()
-    }
 }

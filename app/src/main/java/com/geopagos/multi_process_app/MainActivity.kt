@@ -1,6 +1,5 @@
 package com.geopagos.multi_process_app
 
-import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Message
@@ -43,14 +42,28 @@ class MainActivity : ComponentActivity() {
         //Activity lifecycle
         lifecycle.addObserver(DefaultLifecycleObserverImpl("ACTIVITY", Color.Red, viewModel::sendState))
 
-        viewModel.messages().observeForever {
+        viewModel.messages.observeForever {
             sendMessageToService(it.first, it.second)
+        }
+
+        viewModel.startService.observe(this) {
+            if (it) {
+                Intent(this@MainActivity, MyService::class.java).also { intent ->
+                    bindService(intent, connection, BIND_AUTO_CREATE)
+                }
+            }
+        }
+
+        viewModel.stopService.observe(this) {
+            if(it) {
+                unbindService(connection)
+            }
         }
 
         setContent {
             MultiProcessAppTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Log(Modifier, viewModel.log().observeAsState().value)
+                    Log(Modifier, viewModel.log.observeAsState().value)
                 }
             }
         }
@@ -70,40 +83,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun Log(modifier: Modifier, log: List<Pair<Color, String>>?) {
         Column {
-            Row(
-                modifier = modifier.fillMaxWidth()
-            ) {
-                SimpleButton(
-                    modifier = modifier
-                        .weight(1f)
-                        .padding(5.dp),
-                    title = "Start"
-                ) {
-                    Intent(this@MainActivity, MyService::class.java).also { intent ->
-                        bindService(intent, connection, Context.BIND_AUTO_CREATE)
-                    }
-                }
-
-                SimpleButton(
-                    modifier = modifier
-                        .weight(1f)
-                        .padding(5.dp),
-                    title = "Stop"
-                ) {
-                    this@MainActivity.unbindService(connection)
-                }
-
-                SimpleButton(
-                    modifier = modifier
-                        .weight(2f)
-                        .padding(5.dp),
-                    title = "Launch activity"
-                ) {
-                    Intent(this@MainActivity, OtherActivity::class.java).also { intent ->
-                        startActivity(intent)
-                    }
-                }
-            }
+            ButtonsRow(modifier = modifier)
 
             LazyColumn(
                 modifier = modifier.fillMaxWidth(),
@@ -120,6 +100,53 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @Composable
+    fun ButtonsRow(modifier: Modifier) {
+        Row(
+            modifier = modifier.fillMaxWidth()
+        ) {
+            SimpleButton(
+                modifier = modifier
+                    .weight(1f)
+                    .padding(5.dp),
+                title = "Start",
+                enabled = !(viewModel.startService.observeAsState().value?:false),
+                callback = viewModel::startService,
+            )
+
+            SimpleButton(
+                modifier = modifier
+                    .weight(1f)
+                    .padding(5.dp),
+                title = "Stop",
+                enabled = !(viewModel.stopService.observeAsState().value?:true),
+                callback = viewModel::stopService
+            )
+
+            SimpleButton(
+                modifier = modifier
+                    .weight(2f)
+                    .padding(5.dp),
+                title = "Launch activity"
+            ) {
+                Intent(this@MainActivity, OtherActivity::class.java).also { intent ->
+                    startActivity(intent)
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun SimpleButton(modifier: Modifier = Modifier, title: String, enabled: Boolean = true, callback: () -> Unit = {}) {
+        Button(
+            modifier = modifier,
+            onClick = callback,
+            enabled = enabled
+        ) {
+            Text(text = title)
+        }
+    }
+
     @Preview(showBackground = true)
     @Composable
     fun LogPreview() {
@@ -132,16 +159,6 @@ class MainActivity : ComponentActivity() {
 
         MultiProcessAppTheme {
             Log(Modifier, log)
-        }
-    }
-
-    @Composable
-    fun SimpleButton(modifier: Modifier = Modifier, title: String, callback: () -> Unit = {}) {
-        Button(
-            modifier = modifier,
-            onClick = callback
-        ) {
-            Text(text = title)
         }
     }
 }

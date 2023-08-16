@@ -3,8 +3,9 @@ package com.geopagos.multi_process_app
 import android.os.Bundle
 
 interface ServiceEvents{
-    fun serviceStarted()
+    fun startService()
+    fun stopService()
+    fun logReceived(bundle: Bundle)
+    fun serviceConnected()
     fun serviceDisconnected()
-    fun counterReceived(bundle: Bundle)
-    fun stateReceived(bundle: Bundle)
 }

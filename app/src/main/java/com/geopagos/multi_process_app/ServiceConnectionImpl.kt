@@ -9,11 +9,11 @@ class ServiceConnectionImpl(private val serviceEvents: ServiceEvents) : ServiceC
 
     override fun onServiceConnected(name: ComponentName, service: IBinder?) {
         this.service = service
-        serviceEvents.serviceStarted()
+        serviceEvents.serviceConnected()
     }
 
     override fun onServiceDisconnected(name: ComponentName) {
-        this.service = null
-        serviceEvents.serviceDisconnected()
+       this.service = null
+       serviceEvents.serviceDisconnected()
     }
 }
