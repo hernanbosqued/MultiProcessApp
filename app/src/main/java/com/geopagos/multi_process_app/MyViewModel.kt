@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.map
 
 class MyViewModel : ViewModel(), ServiceEvents {
     private val data: MutableList<Pair<Color, String>> = mutableListOf()
@@ -16,11 +17,15 @@ class MyViewModel : ViewModel(), ServiceEvents {
     private val _messages = MutableLiveData<Pair<Int, Bundle>>()
     val messages: LiveData<Pair<Int, Bundle>> = _messages
 
-    private val _startService = MutableLiveData<Boolean>()
-    val startService: LiveData<Boolean> = _startService
+    private val _serviceState = MutableLiveData<ServiceState>()
+    val serviceState: LiveData<ServiceState> = _serviceState
 
-    private val _stopService = MutableLiveData<Boolean>()
-    val stopService: LiveData<Boolean> = _stopService
+    val isServiceStarted = serviceState.map { value ->
+        when (value) {
+            ServiceState.START -> true
+            ServiceState.STOP -> false
+        }
+    }
 
     override fun logReceived(bundle: Bundle) {
         val color = bundle.getInt("color")
@@ -29,8 +34,7 @@ class MyViewModel : ViewModel(), ServiceEvents {
     }
 
     override fun startService() {
-        _startService.value = true
-        _stopService.value = false
+        _serviceState.value = ServiceState.START
     }
 
     override fun serviceConnected() {
@@ -42,8 +46,7 @@ class MyViewModel : ViewModel(), ServiceEvents {
     }
 
     override fun serviceDisconnected() {
-        _stopService.value = true
-        _startService.value = false
+        _serviceState.value = ServiceState.STOP
     }
 
     fun sendState(owner: String, color: Color, state: String) = sendMessage(MSG_STATE, Bundle().apply {

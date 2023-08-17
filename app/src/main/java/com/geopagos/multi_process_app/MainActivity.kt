@@ -46,17 +46,17 @@ class MainActivity : ComponentActivity() {
             sendMessageToService(it.first, it.second)
         }
 
-        viewModel.startService.observe(this) {
-            if (it) {
-                Intent(this@MainActivity, MyService::class.java).also { intent ->
-                    bindService(intent, connection, BIND_AUTO_CREATE)
+        viewModel.serviceState.observe(this) {
+            when (it) {
+                ServiceState.START -> {
+                    Intent(this@MainActivity, MyService::class.java).also { intent ->
+                        bindService(intent, connection, BIND_AUTO_CREATE)
+                    }
                 }
-            }
-        }
 
-        viewModel.stopService.observe(this) {
-            if(it) {
-                unbindService(connection)
+                ServiceState.STOP -> {
+                    unbindService(connection)
+                }
             }
         }
 
@@ -102,6 +102,8 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun ButtonsRow(modifier: Modifier) {
+        val isServiceEnabled = viewModel.isServiceStarted.observeAsState(false).value
+
         Row(
             modifier = modifier.fillMaxWidth()
         ) {
@@ -110,7 +112,7 @@ class MainActivity : ComponentActivity() {
                     .weight(1f)
                     .padding(5.dp),
                 title = "Start",
-                enabled = !(viewModel.startService.observeAsState().value?:false),
+                enabled = !isServiceEnabled,
                 callback = viewModel::startService,
             )
 
@@ -119,7 +121,7 @@ class MainActivity : ComponentActivity() {
                     .weight(1f)
                     .padding(5.dp),
                 title = "Stop",
-                enabled = !(viewModel.stopService.observeAsState().value?:true),
+                enabled = isServiceEnabled,
                 callback = viewModel::stopService
             )
 
