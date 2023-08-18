@@ -13,4 +13,5 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "MultiProcessApp"
-include ':app'
+include ':multiprocess_app'
+include ':camera_app'
