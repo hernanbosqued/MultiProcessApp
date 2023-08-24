@@ -1,9 +1,12 @@
 package com.geopagos.multi_process_app
 
+import android.app.PendingIntent
 import android.content.Intent
+import android.nfc.NfcAdapter
 import android.os.Bundle
 import android.os.Message
 import android.os.Messenger
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -33,6 +36,8 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MyViewModel by viewModels()
     private val incomingHandler by lazy { HandlerImpl(viewModel) }
     private val connection by lazy { ServiceConnectionImpl(viewModel) }
+    private val nfcAdapter by lazy { NfcAdapter.getDefaultAdapter(this) }
+    private val pendingIntent by lazy { PendingIntent.getActivity(this, 0, Intent(this, javaClass).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_MUTABLE) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,6 +72,21 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        nfcAdapter?.enableForegroundDispatch(this, pendingIntent, null, null);
+    }
+
+    override fun onPause() {
+        super.onPause()
+        nfcAdapter?.disableForegroundDispatch(this);
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        Toast.makeText(this, "MULTIPROCESS APP - TARJETA DETECTADA", Toast.LENGTH_SHORT).show()
     }
 
     private fun sendMessageToService(what: Int, data: Bundle = Bundle()) {
