@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 rootProject.name = "MultiProcessApp"
 include ':multiprocess_app'
 include ':camera_app'
+include ':malware_overlay_app'
