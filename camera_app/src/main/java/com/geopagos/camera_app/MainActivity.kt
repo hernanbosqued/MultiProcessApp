@@ -1,4 +1,4 @@
-package com.geopagos.malware_app
+package com.geopagos.camera_app
 
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -23,7 +23,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.geopagos.malware_app.ui.theme.MultiProcessAppTheme
+import com.geopagos.camera_app.ui.theme.MultiProcessAppTheme
 
 class MainActivity : ComponentActivity() {
 
